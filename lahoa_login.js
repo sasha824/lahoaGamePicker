@@ -1,20 +1,25 @@
 #!/usr/bin/env node
 /**
  * Logs in to the LAHOA scheduling system (lahoa.timetoscore.com),
- * fetches the Unassigned Games page, and prints all games whose
- * league is "TRYHL".
+ * fetches the Unassigned Games page, lets you pick which leagues
+ * you care about, and texts matching games to your phone via Gmail
+ * → Cricket SMS gateway.
  *
- * Usage:
- *     node lahoa_login.js
+ * On first run, prompts for credentials and saves to lahoa_config.json.
+ * League selection is also saved and can be changed any time by typing 'c'
+ * when prompted.
  *
- * 
  * No npm packages required — uses only built-in Node.js (v18+).
  */
 
 "use strict";
 
-const BASE_URL  = "https://lahoa.timetoscore.com";
-const LOGIN_URL = `${BASE_URL}/`;
+const fs   = require("fs");
+const path = require("path");
+
+const CONFIG_FILE  = path.join(__dirname, "lahoa_config.json");
+const BASE_URL     = "https://lahoa.timetoscore.com";
+const LOGIN_URL    = `${BASE_URL}/`;
 const SCHEDULE_URL = `${BASE_URL}/show-schedule.php?anchor=current&official_id=1`;
 
 const BASE_HEADERS = {
@@ -49,10 +54,92 @@ function ask(question) {
   });
 }
 
-async function getCredentials() {
-  const username = process.env.LAHOA_USERNAME || await ask("Username: ");
-  const password = process.env.LAHOA_PASSWORD || await ask("Password: ");
-  return { username, password };
+// ── Config ───────────────────────────────────────────────────────────────────
+
+function loadConfig() {
+  try { return JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8")); }
+  catch { return null; }
+}
+
+function saveConfig(config) {
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), "utf8");
+}
+
+async function getConfig() {
+  const saved = loadConfig();
+  if (saved && saved.lahoa_username && saved.lahoa_password) {
+    console.log("Loaded saved credentials from lahoa_config.json");
+    return saved;
+  }
+
+  console.log("\nFirst run — enter your details. They'll be saved for next time.\n");
+
+  const config = {
+    ...(saved || {}),
+    lahoa_username:   saved?.lahoa_username   || await ask("LAHOA username: "),
+    lahoa_password:   saved?.lahoa_password   || await ask("LAHOA password: "),
+    telegram_token:   saved?.telegram_token   || await ask("Telegram bot token: "),
+    telegram_chat_id: saved?.telegram_chat_id || await ask("Telegram chat ID: "),
+    leagues:          saved?.leagues          || [],
+  };
+  saveConfig(config);
+  console.log(`\nSaved to ${CONFIG_FILE}\n`);
+  return config;
+}
+
+// ── League picker ─────────────────────────────────────────────────────────────
+
+/**
+ * Given the full list of unassigned games, shows only the leagues that
+ * actually appear, lets the user pick multiple by number, saves the
+ * selection to config, and returns the chosen league names.
+ */
+async function pickLeagues(allGames, config) {
+  // Get unique leagues present in today's unassigned games, sorted
+  const available = [...new Set(allGames.map(g => g["League"]).filter(Boolean))].sort();
+
+  if (available.length === 0) {
+    console.log("\nNo leagues found in unassigned games.");
+    return [];
+  }
+
+  console.log("\n" + "─".repeat(52));
+  console.log("Which leagues do you want to be notified about?");
+  console.log("(Enter numbers separated by spaces, e.g. 1 3)");
+  console.log("─".repeat(52));
+  available.forEach((league, i) => {
+    const saved = config.leagues || [];
+    const check = saved.includes(league) ? " ✓" : "";
+    console.log(`  ${i + 1}) ${league}${check}`);
+  });
+  console.log("─".repeat(52));
+
+  // Show current selection if any
+  if (config.leagues && config.leagues.length > 0) {
+    const stillValid = config.leagues.filter(l => available.includes(l));
+    if (stillValid.length > 0) {
+      console.log(`Currently selected: ${stillValid.join(", ")}`);
+      const keep = await ask("Keep this selection? (y to keep / enter new numbers): ");
+      if (keep.toLowerCase() === "y" || keep.toLowerCase() === "yes") {
+        return stillValid;
+      }
+    }
+  }
+
+  const input = await ask("Enter numbers: ");
+  const picks = input.split(/[\s,]+/).map(n => parseInt(n)).filter(n => !isNaN(n) && n >= 1 && n <= available.length);
+  const chosen = [...new Set(picks.map(n => available[n - 1]))];
+
+  if (chosen.length === 0) {
+    console.log("No valid selection made.");
+    return [];
+  }
+
+  // Save to config
+  config.leagues = chosen;
+  saveConfig(config);
+  console.log(`\nSaved league selection: ${chosen.join(", ")}\n`);
+  return chosen;
 }
 
 // ── Cookie jar ───────────────────────────────────────────────────────────────
@@ -115,8 +202,7 @@ async function fetchPage(jar, url, referer) {
 
 // ── HTML parsing ─────────────────────────────────────────────────────────────
 
-/** Extract text from an HTML snippet, decoding common entities. */
-function text(html) {
+function textOf(html) {
   return html
     .replace(/<[^>]+>/g, "")
     .replace(/&nbsp;/g, " ")
@@ -129,33 +215,21 @@ function text(html) {
     .trim();
 }
 
-/**
- * Parse the Unassigned Games table from the schedule page HTML.
- * Returns an array of objects keyed by the column headers.
- */
 function parseUnassignedGames(html) {
-  // Grab the single <table> on the page
   const tableMatch = html.match(/<table[\s\S]*?<\/table>/i);
   if (!tableMatch) return [];
-
-  // Pull all <tr> blocks
   const rows = [...tableMatch[0].matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)].map(m => m[1]);
   if (rows.length < 2) return [];
-
-  // Row 0 is the title ("Unassigned Games"), row 1 is the header row
   const headers = [...rows[1].matchAll(/<th[^>]*>([\s\S]*?)<\/th>/gi)]
-    .map(m => text(m[1]))
+    .map(m => textOf(m[1]))
     .map((h, i, arr) => {
-      // The two "Linesman" headers and two "Referee" headers are duplicated;
-      // make them unique so we can use them as keys.
       const count = arr.slice(0, i).filter(x => x === h).length;
       return count > 0 ? `${h} ${count + 1}` : h;
     });
-
   const games = [];
   for (const row of rows.slice(2)) {
-    const cells = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map(m => text(m[1]));
-    if (cells.length === 0) continue;
+    const cells = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map(m => textOf(m[1]));
+    if (!cells.length) continue;
     const game = {};
     headers.forEach((h, i) => { game[h] = cells[i] ?? ""; });
     games.push(game);
@@ -163,33 +237,62 @@ function parseUnassignedGames(html) {
   return games;
 }
 
+// ── Telegram ─────────────────────────────────────────────────────────────────
+
+async function sendSMS(config, message) {
+  const url = `https://api.telegram.org/bot${config.telegram_token}/sendMessage`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: config.telegram_chat_id, text: message }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`Telegram error ${res.status}: ${err.description || res.statusText}`);
+  }
+}
+
 // ── Display ──────────────────────────────────────────────────────────────────
 
-function printGame(game) {
+function formatGame(game) {
   const line = "─".repeat(52);
-  console.log(line);
-  console.log(`Game #   : ${game["Game"]}`);
-  console.log(`Date     : ${game["Date"]}  ${game["Time"]}`);
-  console.log(`Rink     : ${game["Rink"]}`);
-  console.log(`League   : ${game["League"]}`);
-  console.log(`Level    : ${game["Level"]}`);
-  console.log(`Away     : ${game["Away"] || "(TBD)"}`);
-  console.log(`Home     : ${game["Home"] || "(TBD)"}`);
-  console.log(`Type     : ${game["Type"]}`);
-  console.log(`Referee  : ${game["Referee"]  || "(open)"}`);
-  console.log(`Referee 2: ${game["Referee 2"] || "(open)"}`);
-  console.log(`Linesman : ${game["Linesman"]  || "(open)"}`);
-  console.log(`Linesman2: ${game["Linesman 2"] || "(open)"}`);
+  return [
+    line,
+    `Game #   : ${game["Game"]}`,
+    `Date     : ${game["Date"]}  ${game["Time"]}`,
+    `Rink     : ${game["Rink"]}`,
+    `League   : ${game["League"]}`,
+    `Level    : ${game["Level"]}`,
+    `Away     : ${game["Away"]       || "(TBD)"}`,
+    `Home     : ${game["Home"]       || "(TBD)"}`,
+    `Type     : ${game["Type"]}`,
+    `Referee  : ${game["Referee"]    || "(open)"}`,
+    `Referee 2: ${game["Referee 2"]  || "(open)"}`,
+    `Linesman : ${game["Linesman"]   || "(open)"}`,
+    `Linesman2: ${game["Linesman 2"] || "(open)"}`,
+  ].join("\n");
+}
+
+function formatGameSMS(game) {
+  return [
+    `Game: ${game["Game"]}`,
+    `${game["Date"]} ${game["Time"]}`,
+    `Rink: ${game["Rink"]}`,
+    `Level: ${game["Level"]}`,
+    `${game["Away"] || "TBD"} vs ${game["Home"] || "TBD"}`,
+    `Refs: ${game["Referee"] || "open"} / ${game["Referee 2"] || "open"}`,
+    `Lines: ${game["Linesman"] || "open"} / ${game["Linesman 2"] || "open"}`,
+  ].join("\n");
 }
 
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 async function run() {
-  const { username, password } = await getCredentials();
+  const config = await getConfig();
   const jar = new CookieJar();
 
-  console.error(`\nLogging in as '${username}'...`);
-  const { finalUrl } = await login(jar, username, password);
+  console.error(`\nLogging in as '${config.lahoa_username}'...`);
+  const { finalUrl } = await login(jar, config.lahoa_username, config.lahoa_password);
   if (!finalUrl.includes("main.php")) {
     console.error("Login may have failed — did not land on main.php.");
     console.error(`Landed at: ${finalUrl}`);
@@ -198,16 +301,31 @@ async function run() {
 
   console.error("Fetching unassigned games...");
   const html = await fetchPage(jar, SCHEDULE_URL, `${BASE_URL}/sidebar.php`);
-
   const allGames = parseUnassignedGames(html);
-  const tryhlGames = allGames.filter(g => g["League"] === "TRYHL");
 
-  if (tryhlGames.length === 0) {
-    console.log("\nNo unassigned TRYHL games found.");
+  // Pick leagues — only shows leagues actually present in today's games
+  const chosenLeagues = await pickLeagues(allGames, config);
+  if (chosenLeagues.length === 0) return 0;
+
+  const matchingGames = allGames.filter(g => chosenLeagues.includes(g["League"]));
+
+  if (matchingGames.length === 0) {
+    console.log(`\nNo unassigned games found for: ${chosenLeagues.join(", ")}`);
   } else {
-    console.log(`\nFound ${tryhlGames.length} unassigned TRYHL game(s):\n`);
-    tryhlGames.forEach(printGame);
+    console.log(`\nFound ${matchingGames.length} game(s) for ${chosenLeagues.join(", ")}:\n`);
+    for (const game of matchingGames) {
+      console.log(formatGame(game));
+    }
     console.log("─".repeat(52));
+
+    console.error("\nSending text message(s)...");
+    for (let i = 0; i < matchingGames.length; i++) {
+      const game = matchingGames[i];
+      const msg = `LAHOA ${game["League"]} (${i + 1}/${matchingGames.length})\n\n${formatGameSMS(game)}`;
+      await sendSMS(config, msg);
+      console.error(`  Sent game ${i + 1} of ${matchingGames.length}`);
+    }
+    console.log("\nText message(s) sent!");
   }
 
   return 0;
