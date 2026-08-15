@@ -35,7 +35,17 @@ const BASE_HEADERS = {
   "Accept-Language": "en-US,en;q=0.9",
 };
 
-const ON_RAILWAY = !!process.env.RAILWAY_ENVIRONMENT || !!process.env.RAILWAY_PROJECT_ID;
+// Detect Railway by checking any of the env vars we set ourselves
+const ON_RAILWAY = !!(
+  process.env.RAILWAY_ENVIRONMENT ||
+  process.env.RAILWAY_PROJECT_ID ||
+  process.env.LAHOA_USERNAME  // if env vars are set, we're definitely not local
+);
+
+console.log(`Starting LAHOA notifier... (Railway mode: ${ON_RAILWAY})`);
+console.log(`LAHOA_USERNAME set: ${!!process.env.LAHOA_USERNAME}`);
+console.log(`TELEGRAM_TOKEN set: ${!!process.env.TELEGRAM_TOKEN}`);
+console.log(`LEAGUES: ${process.env.LEAGUES || "(not set)"}`);
 
 // ── Input ────────────────────────────────────────────────────────────────────
 
