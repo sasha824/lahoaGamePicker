@@ -1,0 +1,13 @@
+{
+  "name": "lahoagamepicker",
+  "version": "1.0.0",
+  "description": "Logs in to LAHOA and prints the first sentence of the home page.",
+  "main": "lahoa_login.js",
+  "scripts": {
+    "start": "node lahoa_login.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

@@ -1,31 +1,43 @@
 #!/usr/bin/env node
 /**
- * Logs in to the LAHOA scheduling system (lahoa.timetoscore.com),
- * fetches the Unassigned Games page, lets you pick which leagues
- * you care about, and texts matching games to your phone via Gmail
- * → Cricket SMS gateway.
+ * Logs in to the LAHOA scheduling system (lahoa.timetoscore.com) and prints
+ * the first sentence of text shown on the post-login home page.
  *
- * On first run, prompts for credentials and saves to lahoa_config.json.
- * League selection is also saved and can be changed any time by typing 'c'
- * when prompted.
+ * Login flow (reverse-engineered from the provided HAR capture):
+ *   1. POST https://lahoa.timetoscore.com/
+ *        form fields: username, password, login=""
+ *        -> 302 redirect to main.php?user=<username>
+ *   2. GET main.php?user=<username>   (a <frameset> page, no visible text)
+ *        It loads two frames:
+ *          - sidebar.php  (left nav)
+ *          - home.php     (main content -- this is where the visible text lives)
+ *   3. GET home.php   -> contains the actual welcome message / page content.
  *
- * No npm packages required — uses only built-in Node.js (v18+).
+ * Credentials are NOT hardcoded. Provide them via environment variables:
+ *     LAHOA_USERNAME
+ *     LAHOA_PASSWORD
+ * or you'll be prompted for them interactively (input is visible, not masked,
+ * so it can be pasted/seen while typing).
+ *
+ * Usage:
+ *     node lahoa_login.js
+ *     LAHOA_USERNAME=myuser LAHOA_PASSWORD=mypass node lahoa_login.js
+ *
+ * Requires only Node.js itself -- no npm install needed (Node 18+).
  */
 
 "use strict";
 
-const fs   = require("fs");
-const path = require("path");
+const BASE_URL = "https://lahoa.timetoscore.com";
+const LOGIN_URL = `${BASE_URL}/`;
+const HOME_URL = `${BASE_URL}/home.php`;
 
-const CONFIG_FILE  = path.join(__dirname, "lahoa_config.json");
-const BASE_URL     = "https://lahoa.timetoscore.com";
-const LOGIN_URL    = `${BASE_URL}/`;
-const SCHEDULE_URL = `${BASE_URL}/show-schedule.php?anchor=current&official_id=1`;
-
+// Headers modeled after the captured browser request so the server treats
+// us like a normal browser session.
 const BASE_HEADERS = {
   "User-Agent":
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
-    "(KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+    "(KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
   Accept:
     "text/html,application/xhtml+xml,application/xml;q=0.9," +
     "image/avif,image/webp,image/apng,*/*;q=0.8," +
@@ -33,299 +45,230 @@ const BASE_HEADERS = {
   "Accept-Language": "en-US,en;q=0.9",
 };
 
-// ── Input ────────────────────────────────────────────────────────────────────
+const BLOCK_LEVEL_TAGS = new Set([
+  "p", "div", "br", "h1", "h2", "h3", "h4", "h5", "h6",
+  "li", "tr", "table", "ul", "ol", "section", "article",
+  "header", "footer", "blockquote", "hr",
+]);
 
+/**
+ * Reads a line of input from stdin, echoing whatever is typed/pasted.
+ * Uses raw stdin reading instead of the readline module, since readline's
+ * line-editing mode can be unreliable with Ctrl+V paste in some Windows
+ * Command Prompt configurations.
+ */
 function ask(question) {
   return new Promise((resolve) => {
     process.stdout.write(question);
     process.stdin.resume();
     process.stdin.setEncoding("utf8");
+
     let buffer = "";
+
     function onData(chunk) {
       buffer += chunk;
-      const nl = buffer.search(/[\r\n]/);
-      if (nl !== -1) {
-        process.stdin.removeListener("data", onData);
-        process.stdin.pause();
-        resolve(buffer.slice(0, nl).trim());
+      // Treat \n, \r, or \r\n as "submit" (Enter pressed, or a pasted
+      // string that itself ends in a newline).
+      const newlineIdx = buffer.search(/[\r\n]/);
+      if (newlineIdx !== -1) {
+        cleanup();
+        resolve(buffer.slice(0, newlineIdx).trim());
       }
     }
+
+    function cleanup() {
+      process.stdin.removeListener("data", onData);
+      process.stdin.pause();
+    }
+
     process.stdin.on("data", onData);
   });
 }
 
-// ── Config ───────────────────────────────────────────────────────────────────
+// When running as a scheduled/hosted job (e.g. on Railway) there is no
+// terminal attached, so we must NOT block waiting for interactive input.
+// process.stdin.isTTY is undefined/false in that environment.
+const IS_INTERACTIVE = Boolean(process.stdin.isTTY);
 
-function loadConfig() {
-  try { return JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8")); }
-  catch { return null; }
-}
+async function getCredentials() {
+  let username = process.env.LAHOA_USERNAME;
+  let password = process.env.LAHOA_PASSWORD;
 
-function saveConfig(config) {
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), "utf8");
-}
-
-async function getConfig() {
-  const saved = loadConfig();
-  if (saved && saved.lahoa_username && saved.lahoa_password) {
-    console.log("Loaded saved credentials from lahoa_config.json");
-    return saved;
+  if ((!username || !password) && !IS_INTERACTIVE) {
+    throw new Error(
+      "LAHOA_USERNAME and LAHOA_PASSWORD environment variables must both " +
+        "be set when running non-interactively (e.g. as a hosted/scheduled job)."
+    );
   }
 
-  console.log("\nFirst run — enter your details. They'll be saved for next time.\n");
-
-  const config = {
-    ...(saved || {}),
-    lahoa_username:   saved?.lahoa_username   || await ask("LAHOA username: "),
-    lahoa_password:   saved?.lahoa_password   || await ask("LAHOA password: "),
-    telegram_token:   saved?.telegram_token   || await ask("Telegram bot token: "),
-    telegram_chat_id: saved?.telegram_chat_id || await ask("Telegram chat ID: "),
-    leagues:          saved?.leagues          || [],
-  };
-  saveConfig(config);
-  console.log(`\nSaved to ${CONFIG_FILE}\n`);
-  return config;
+  if (!username) {
+    username = await ask("Username: ");
+  }
+  if (!password) {
+    // Visible input (not masked) so it can be pasted/seen while typing.
+    password = await ask("Password: ");
+  }
+  return { username, password };
 }
 
-// ── League picker ─────────────────────────────────────────────────────────────
-
-/**
- * Given the full list of unassigned games, shows only the leagues that
- * actually appear, lets the user pick multiple by number, saves the
- * selection to config, and returns the chosen league names.
- */
-async function pickLeagues(allGames, config) {
-  // Get unique leagues present in today's unassigned games, sorted
-  const available = [...new Set(allGames.map(g => g["League"]).filter(Boolean))].sort();
-
-  if (available.length === 0) {
-    console.log("\nNo leagues found in unassigned games.");
-    return [];
-  }
-
-  console.log("\n" + "─".repeat(52));
-  console.log("Which leagues do you want to be notified about?");
-  console.log("(Enter numbers separated by spaces, e.g. 1 3)");
-  console.log("─".repeat(52));
-  available.forEach((league, i) => {
-    const saved = config.leagues || [];
-    const check = saved.includes(league) ? " ✓" : "";
-    console.log(`  ${i + 1}) ${league}${check}`);
-  });
-  console.log("─".repeat(52));
-
-  // Show current selection if any
-  if (config.leagues && config.leagues.length > 0) {
-    const stillValid = config.leagues.filter(l => available.includes(l));
-    if (stillValid.length > 0) {
-      console.log(`Currently selected: ${stillValid.join(", ")}`);
-      const keep = await ask("Keep this selection? (y to keep / enter new numbers): ");
-      if (keep.toLowerCase() === "y" || keep.toLowerCase() === "yes") {
-        return stillValid;
-      }
-    }
-  }
-
-  const input = await ask("Enter numbers: ");
-  const picks = input.split(/[\s,]+/).map(n => parseInt(n)).filter(n => !isNaN(n) && n >= 1 && n <= available.length);
-  const chosen = [...new Set(picks.map(n => available[n - 1]))];
-
-  if (chosen.length === 0) {
-    console.log("No valid selection made.");
-    return [];
-  }
-
-  // Save to config
-  config.leagues = chosen;
-  saveConfig(config);
-  console.log(`\nSaved league selection: ${chosen.join(", ")}\n`);
-  return chosen;
-}
-
-// ── Cookie jar ───────────────────────────────────────────────────────────────
-
+/** Minimal cookie jar: stores name=value pairs and re-sends them on every request. */
 class CookieJar {
-  constructor() { this.cookies = new Map(); }
-  store(res) {
-    const headers = res.headers.getSetCookie ? res.headers.getSetCookie() : [];
-    for (const raw of headers) {
+  constructor() {
+    this.cookies = new Map();
+  }
+  storeFromResponse(res) {
+    const setCookieHeaders = res.headers.getSetCookie
+      ? res.headers.getSetCookie()
+      : res.headers.raw
+      ? res.headers.raw()["set-cookie"] || []
+      : [];
+    for (const raw of setCookieHeaders) {
       const [pair] = raw.split(";");
-      const eq = pair.indexOf("=");
-      if (eq === -1) continue;
-      this.cookies.set(pair.slice(0, eq).trim(), pair.slice(eq + 1).trim());
+      const eqIdx = pair.indexOf("=");
+      if (eqIdx === -1) continue;
+      const name = pair.slice(0, eqIdx).trim();
+      const value = pair.slice(eqIdx + 1).trim();
+      this.cookies.set(name, value);
     }
   }
   header() {
-    return [...this.cookies.entries()].map(([k, v]) => `${k}=${v}`).join("; ");
+    return Array.from(this.cookies.entries())
+      .map(([k, v]) => `${k}=${v}`)
+      .join("; ");
   }
-  headers(extra = {}) {
-    const h = { ...BASE_HEADERS, ...extra };
-    if (this.header()) h["Cookie"] = this.header();
-    return h;
-  }
-}
-
-// ── HTTP helpers ─────────────────────────────────────────────────────────────
-
-async function fetchFollowing(jar, url, options = {}) {
-  let res = await fetch(url, { ...options, redirect: "manual" });
-  jar.store(res);
-  let hops = 0;
-  while ([301, 302, 303, 307, 308].includes(res.status) && hops++ < 5) {
-    const loc = res.headers.get("location");
-    if (!loc) break;
-    url = new URL(loc, url).toString();
-    res = await fetch(url, { headers: jar.headers({ Referer: url }), redirect: "manual" });
-    jar.store(res);
-  }
-  return { res, finalUrl: url };
 }
 
 async function login(jar, username, password) {
-  const body = new URLSearchParams({ username, password, login: "" }).toString();
-  return fetchFollowing(jar, LOGIN_URL, {
+  const body = new URLSearchParams({
+    username,
+    password,
+    login: "",
+  }).toString();
+
+  const headers = {
+    ...BASE_HEADERS,
+    "Content-Type": "application/x-www-form-urlencoded",
+    Origin: BASE_URL,
+    Referer: LOGIN_URL,
+  };
+  if (jar.header()) headers["Cookie"] = jar.header();
+
+  // redirect: "manual" so we can capture cookies at each hop and follow
+  // the chain ourselves, mirroring how a browser would.
+  let res = await fetch(LOGIN_URL, {
     method: "POST",
-    headers: jar.headers({
-      "Content-Type": "application/x-www-form-urlencoded",
-      Origin: BASE_URL,
-      Referer: LOGIN_URL,
-    }),
+    headers,
     body,
+    redirect: "manual",
   });
+  jar.storeFromResponse(res);
+
+  let finalUrl = LOGIN_URL;
+  let hops = 0;
+  while ([301, 302, 303, 307, 308].includes(res.status) && hops < 5) {
+    const location = res.headers.get("location");
+    if (!location) break;
+    finalUrl = new URL(location, finalUrl).toString();
+    const redirHeaders = { ...BASE_HEADERS, Referer: LOGIN_URL };
+    if (jar.header()) redirHeaders["Cookie"] = jar.header();
+    res = await fetch(finalUrl, { headers: redirHeaders, redirect: "manual" });
+    jar.storeFromResponse(res);
+    hops += 1;
+  }
+
+  return { res, finalUrl };
 }
 
-async function fetchPage(jar, url, referer) {
-  const res = await fetch(url, { headers: jar.headers({ Referer: referer }) });
-  if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`);
+async function fetchHome(jar) {
+  const headers = { ...BASE_HEADERS, Referer: `${BASE_URL}/main.php` };
+  if (jar.header()) headers["Cookie"] = jar.header();
+  const res = await fetch(HOME_URL, { headers });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch home.php: HTTP ${res.status}`);
+  }
   return res.text();
 }
 
-// ── HTML parsing ─────────────────────────────────────────────────────────────
+/**
+ * Strip HTML and pull out the first sentence/line of visible text, without
+ * any external HTML-parsing library. Inline tags (e.g. <b>, <font>, <a>)
+ * are treated as part of the surrounding text so phrases like
+ * "Welcome back <b>Name</b>" stay together. Only block-level tags / <br>
+ * introduce a line break.
+ */
+function extractFirstSentence(html) {
+  // Remove <style>, <script>, <head> blocks entirely (including content).
+  let cleaned = html.replace(/<style[\s\S]*?<\/style>/gi, "");
+  cleaned = cleaned.replace(/<script[\s\S]*?<\/script>/gi, "");
+  cleaned = cleaned.replace(/<head[\s\S]*?<\/head>/gi, "");
 
-function textOf(html) {
-  return html
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s+/g, " ")
-    .trim();
+  // Insert a newline after each block-level tag's closing/self-closing form,
+  // so inline tags stay joined but block boundaries become line breaks.
+  const blockPattern = new RegExp(
+    `</?(?:${Array.from(BLOCK_LEVEL_TAGS).join("|")})\\b[^>]*>`,
+    "gi"
+  );
+  cleaned = cleaned.replace(blockPattern, (match) => `${match}\n`);
+
+  // Strip all remaining tags.
+  let text = cleaned.replace(/<[^>]+>/g, "");
+
+  // Decode common HTML entities.
+  const entities = {
+    "&nbsp;": " ",
+    "&amp;": "&",
+    "&lt;": "<",
+    "&gt;": ">",
+    "&quot;": '"',
+    "&#39;": "'",
+    "&middot;": "\u00b7",
+  };
+  text = text.replace(/&[a-zA-Z#0-9]+;/g, (e) => entities[e] ?? e);
+
+  const lines = text
+    .split("\n")
+    .map((line) => line.replace(/[ \t]+/g, " ").trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) return "";
+
+  const firstLine = lines[0];
+
+  // Within that first line/block, prefer to stop at the first real
+  // sentence-ending punctuation if one exists.
+  const match = firstLine.match(/.+?[.!?](?=\s|$)/);
+  return (match ? match[0] : firstLine).trim();
 }
-
-function parseUnassignedGames(html) {
-  const tableMatch = html.match(/<table[\s\S]*?<\/table>/i);
-  if (!tableMatch) return [];
-  const rows = [...tableMatch[0].matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)].map(m => m[1]);
-  if (rows.length < 2) return [];
-  const headers = [...rows[1].matchAll(/<th[^>]*>([\s\S]*?)<\/th>/gi)]
-    .map(m => textOf(m[1]))
-    .map((h, i, arr) => {
-      const count = arr.slice(0, i).filter(x => x === h).length;
-      return count > 0 ? `${h} ${count + 1}` : h;
-    });
-  const games = [];
-  for (const row of rows.slice(2)) {
-    const cells = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map(m => textOf(m[1]));
-    if (!cells.length) continue;
-    const game = {};
-    headers.forEach((h, i) => { game[h] = cells[i] ?? ""; });
-    games.push(game);
-  }
-  return games;
-}
-
-// ── Telegram ─────────────────────────────────────────────────────────────────
-
-async function sendSMS(config, message) {
-  const url = `https://api.telegram.org/bot${config.telegram_token}/sendMessage`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: config.telegram_chat_id, text: message }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(`Telegram error ${res.status}: ${err.description || res.statusText}`);
-  }
-}
-
-// ── Display ──────────────────────────────────────────────────────────────────
-
-function formatGame(game) {
-  const line = "─".repeat(52);
-  return [
-    line,
-    `Game #   : ${game["Game"]}`,
-    `Date     : ${game["Date"]}  ${game["Time"]}`,
-    `Rink     : ${game["Rink"]}`,
-    `League   : ${game["League"]}`,
-    `Level    : ${game["Level"]}`,
-    `Away     : ${game["Away"]       || "(TBD)"}`,
-    `Home     : ${game["Home"]       || "(TBD)"}`,
-    `Type     : ${game["Type"]}`,
-    `Referee  : ${game["Referee"]    || "(open)"}`,
-    `Referee 2: ${game["Referee 2"]  || "(open)"}`,
-    `Linesman : ${game["Linesman"]   || "(open)"}`,
-    `Linesman2: ${game["Linesman 2"] || "(open)"}`,
-  ].join("\n");
-}
-
-function formatGameSMS(game) {
-  return [
-    `Game: ${game["Game"]}`,
-    `${game["Date"]} ${game["Time"]}`,
-    `Rink: ${game["Rink"]}`,
-    `Level: ${game["Level"]}`,
-    `${game["Away"] || "TBD"} vs ${game["Home"] || "TBD"}`,
-    `Refs: ${game["Referee"] || "open"} / ${game["Referee 2"] || "open"}`,
-    `Lines: ${game["Linesman"] || "open"} / ${game["Linesman 2"] || "open"}`,
-  ].join("\n");
-}
-
-// ── Main ─────────────────────────────────────────────────────────────────────
 
 async function run() {
-  const config = await getConfig();
+  const { username, password } = await getCredentials();
+
   const jar = new CookieJar();
 
-  console.error(`\nLogging in as '${config.lahoa_username}'...`);
-  const { finalUrl } = await login(jar, config.lahoa_username, config.lahoa_password);
-  if (!finalUrl.includes("main.php")) {
-    console.error("Login may have failed — did not land on main.php.");
-    console.error(`Landed at: ${finalUrl}`);
+  console.error(`Logging in as '${username}'...`);
+  const { res: loginRes, finalUrl } = await login(jar, username, password);
+
+  if (!loginRes.ok && ![301, 302, 303, 307, 308].includes(loginRes.status)) {
+    console.error(`Login request failed: HTTP ${loginRes.status}`);
     return 1;
   }
 
-  console.error("Fetching unassigned games...");
-  const html = await fetchPage(jar, SCHEDULE_URL, `${BASE_URL}/sidebar.php`);
-  const allGames = parseUnassignedGames(html);
+  if (!finalUrl.includes("main.php")) {
+    console.error(
+      `Login may have failed: did not land on main.php (ended up at ${finalUrl}). Check your credentials.`
+    );
+  }
 
-  // Pick leagues — only shows leagues actually present in today's games
-  const chosenLeagues = await pickLeagues(allGames, config);
-  if (chosenLeagues.length === 0) return 0;
+  console.error("Fetching home page content...");
+  const homeHtml = await fetchHome(jar);
 
-  const matchingGames = allGames.filter(g => chosenLeagues.includes(g["League"]));
+  const firstSentence = extractFirstSentence(homeHtml);
 
-  if (matchingGames.length === 0) {
-    console.log(`\nNo unassigned games found for: ${chosenLeagues.join(", ")}`);
+  if (firstSentence) {
+    console.log(firstSentence);
   } else {
-    console.log(`\nFound ${matchingGames.length} game(s) for ${chosenLeagues.join(", ")}:\n`);
-    for (const game of matchingGames) {
-      console.log(formatGame(game));
-    }
-    console.log("─".repeat(52));
-
-    console.error("\nSending text message(s)...");
-    for (let i = 0; i < matchingGames.length; i++) {
-      const game = matchingGames[i];
-      const msg = `LAHOA ${game["League"]} (${i + 1}/${matchingGames.length})\n\n${formatGameSMS(game)}`;
-      await sendSMS(config, msg);
-      console.error(`  Sent game ${i + 1} of ${matchingGames.length}`);
-    }
-    console.log("\nText message(s) sent!");
+    console.error("Could not find any readable text on the page.");
+    return 1;
   }
 
   return 0;
@@ -336,10 +279,17 @@ async function main() {
   try {
     exitCode = await run();
   } catch (err) {
-    console.error(`\nError: ${err.message}`);
+    console.error(`\nUnexpected error: ${err.message}`);
     exitCode = 1;
   }
-  await ask("\nPress Enter to close...");
+
+  // Keep the window open so the output/error is readable when the script
+  // was launched by double-clicking rather than from an existing terminal.
+  // Skip this when running non-interactively (e.g. a hosted/scheduled job)
+  // since there's nobody there to press Enter, and it would hang forever.
+  if (IS_INTERACTIVE) {
+    await ask("\nPress Enter to close...");
+  }
   process.exit(exitCode);
 }
 
