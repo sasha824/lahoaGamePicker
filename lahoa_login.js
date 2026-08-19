@@ -243,10 +243,17 @@ function parseUnassignedGames(html) {
     });
   const games = [];
   for (const row of rows.slice(2)) {
-    const cells = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map(m => textOf(m[1]));
-    if (!cells.length) continue;
+    const cellMatches = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)];
+    if (!cellMatches.length) continue;
+    const cells = cellMatches.map(m => textOf(m[1]));
     const game = {};
     headers.forEach((h, i) => { game[h] = cells[i] ?? ""; });
+
+    // Detect request status from the last cell's link text:
+    // "Unrequest Game" = already requested, "Request Game" = not yet requested
+    const lastCellHtml = cellMatches[cellMatches.length - 1][1];
+    game["Status"] = /unrequest/i.test(lastCellHtml) ? "REQUESTED" : "NEW";
+
     games.push(game);
   }
   return games;
@@ -273,6 +280,7 @@ function formatGame(game) {
   const line = "─".repeat(52);
   return [
     line,
+    `Status   : ${game["Status"]}`,
     `Game #   : ${game["Game"]}`,
     `Date     : ${game["Date"]}  ${game["Time"]}`,
     `Rink     : ${game["Rink"]}`,
@@ -290,7 +298,7 @@ function formatGame(game) {
 
 function formatGameSMS(game) {
   return [
-    `Game: ${game["Game"]}`,
+    `[${game["Status"]}] Game: ${game["Game"]}`,
     `${game["Date"]} ${game["Time"]}`,
     `Rink: ${game["Rink"]}`,
     `Level: ${game["Level"]}`,
