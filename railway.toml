@@ -1,3 +1,0 @@
-[deploy]
-cronSchedule = "0 3,15 * * *"
-startCommand = "node lahoa_login.js"

@@ -12,6 +12,8 @@
  *   TELEGRAM_TOKEN
  *   TELEGRAM_CHAT_ID
  *   LEAGUES  (comma-separated, e.g. "TRYHL,AIAHL")
+ *   LINESMAN_ONLY  (optional, "true" = only games with an open linesman spot;
+ *                   locally you're asked each run and the answer is saved)
  */
 
 "use strict";
@@ -20,6 +22,7 @@ const fs   = require("fs");
 const path = require("path");
 
 const CONFIG_FILE  = path.join(__dirname, "lahoa_config.json");
+const STATE_FILE   = path.join(__dirname, "lahoa_sent.json");
 const BASE_URL     = "https://lahoa.timetoscore.com";
 const LOGIN_URL    = `${BASE_URL}/`;
 const SCHEDULE_URL = `${BASE_URL}/show-schedule.php?anchor=current&official_id=1`;
@@ -42,7 +45,11 @@ const ON_RAILWAY = !!(
   process.env.LAHOA_USERNAME  // if env vars are set, we're definitely not local
 );
 
-console.log(`Starting LAHOA notifier... (Railway mode: ${ON_RAILWAY})`);
+// --auto = unattended mode for Task Scheduler: no prompts, uses saved config,
+// only messages about games not already sent.
+const AUTO = process.argv.includes("--auto");
+
+console.log(`Starting LAHOA notifier... (${new Date().toLocaleString()}) (Railway mode: ${ON_RAILWAY}, auto: ${AUTO})`);
 console.log(`LAHOA_USERNAME set: ${!!process.env.LAHOA_USERNAME}`);
 console.log(`TELEGRAM_TOKEN set: ${!!process.env.TELEGRAM_TOKEN}`);
 console.log(`LEAGUES: ${process.env.LEAGUES || "(not set)"}`);
@@ -99,6 +106,10 @@ async function getConfig() {
     return saved;
   }
 
+  if (AUTO) {
+    throw new Error("No saved credentials. Run run_lahoa_login_js.bat once (without --auto) to set up first.");
+  }
+
   console.log("\nFirst run — enter your details. They'll be saved for next time.\n");
   const config = {
     ...(saved || {}),
@@ -111,6 +122,21 @@ async function getConfig() {
   saveConfig(config);
   console.log(`\nSaved to ${CONFIG_FILE}\n`);
   return config;
+}
+
+// ── Sent-games state (auto mode) ─────────────────────────────────────────────
+
+function loadState() {
+  try { return JSON.parse(fs.readFileSync(STATE_FILE, "utf8")); }
+  catch { return {}; }
+}
+
+function saveState(state) {
+  fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2), "utf8");
+}
+
+function gameKey(game) {
+  return `${game["Game"]}|${game["Date"]}|${game["Time"]}`;
 }
 
 // ── League picker (local only) ───────────────────────────────────────────────
@@ -276,6 +302,10 @@ async function sendMessage(config, message) {
 
 // ── Display ──────────────────────────────────────────────────────────────────
 
+function hasOpenLinesman(game) {
+  return !game["Linesman"] || !game["Linesman 2"];
+}
+
 function formatGame(game) {
   const line = "─".repeat(52);
   return [
@@ -298,6 +328,7 @@ function formatGame(game) {
 
 function formatGameSMS(game) {
   return [
+    ...(hasOpenLinesman(game) ? ["*** LINESMAN OPEN ***"] : []),
     `[${game["Status"]}] Game: ${game["Game"]}`,
     `${game["Date"]} ${game["Time"]}`,
     `Rink: ${game["Rink"]}`,
@@ -330,6 +361,9 @@ async function run() {
   if (ON_RAILWAY) {
     chosenLeagues = config.leagues;
     console.log(`Filtering for leagues: ${chosenLeagues.join(", ")}`);
+  } else if (AUTO) {
+    chosenLeagues = config.leagues || [];
+    console.log(`Filtering for leagues: ${chosenLeagues.join(", ")}`);
   } else {
     chosenLeagues = await pickLeagues(allGames, config);
   }
@@ -339,28 +373,89 @@ async function run() {
     return 0;
   }
 
-  const matchingGames = allGames.filter(g => chosenLeagues.includes(g["League"]));
+  let linesmanOnly;
+  if (ON_RAILWAY) {
+    linesmanOnly = process.env.LINESMAN_ONLY === "true";
+  } else if (AUTO) {
+    linesmanOnly = config.linesman_only === true;
+  } else {
+    const current = config.linesman_only === true;
+    const answer = (await ask(
+      `\nOnly show games with an open linesman spot? (y/n, enter = ${current ? "y" : "n"}): `
+    )).toLowerCase();
+    if (answer === "y" || answer === "yes") linesmanOnly = true;
+    else if (answer === "n" || answer === "no") linesmanOnly = false;
+    else linesmanOnly = current;
+    config.linesman_only = linesmanOnly;
+    saveConfig(config);
+  }
+  const leagueGames = allGames.filter(g => chosenLeagues.includes(g["League"]));
 
-  if (matchingGames.length === 0) {
-    console.log(`No unassigned games found for: ${chosenLeagues.join(", ")}`);
-    if (ON_RAILWAY) {
-      await sendMessage(config, `LAHOA: No unassigned games for ${chosenLeagues.join(", ")}`);
+  // Games with an open linesman spot first (sort is stable, so schedule order is kept within each group)
+  const matchingGames = (linesmanOnly ? leagueGames.filter(hasOpenLinesman) : [...leagueGames])
+    .sort((a, b) => hasOpenLinesman(b) - hasOpenLinesman(a));
+
+  // Diagnostics: shows where games get filtered out
+  console.log(`Total unassigned games parsed: ${allGames.length}`);
+  console.log(`Leagues found on site: ${[...new Set(allGames.map(g => g["League"]))].join(", ") || "(none)"}`);
+  console.log(`In your leagues (${chosenLeagues.join(", ")}): ${leagueGames.length}`);
+  console.log(`With an open linesman spot: ${leagueGames.filter(hasOpenLinesman).length}`);
+  console.log(`Linesman-only filter: ${linesmanOnly ? "ON" : "OFF"}`);
+  if (leagueGames[0]) {
+    console.log(`Sample linesman values: Linesman=${JSON.stringify(leagueGames[0]["Linesman"])} Linesman 2=${JSON.stringify(leagueGames[0]["Linesman 2"])}`);
+    console.log(`Column names: ${Object.keys(leagueGames[0]).join(", ")}`);
+  }
+
+  // Auto mode: only notify about new games, or games whose linesman spot just opened up.
+  const state = AUTO ? loadState() : {};
+  let toSend = matchingGames;
+  if (AUTO) {
+    toSend = matchingGames.filter(g => {
+      const prev = state[gameKey(g)];
+      return !prev || (!prev.open && hasOpenLinesman(g));
+    });
+  }
+
+  if (toSend.length === 0) {
+    if (AUTO) {
+      console.log("No new games to report.");
+    } else {
+      console.log(`No unassigned games found for: ${chosenLeagues.join(", ")}`);
+      if (ON_RAILWAY) {
+        await sendMessage(config, `LAHOA: No unassigned games for ${chosenLeagues.join(", ")}`);
+      }
     }
   } else {
-    console.log(`Found ${matchingGames.length} game(s):\n`);
-    for (const game of matchingGames) {
+    console.log(`Found ${toSend.length} game(s):\n`);
+    for (const game of toSend) {
       console.log(formatGame(game));
     }
     console.log("─".repeat(52));
 
     console.log("\nSending Telegram message(s)...");
-    for (let i = 0; i < matchingGames.length; i++) {
-      const game = matchingGames[i];
-      const msg = `LAHOA ${game["League"]} (${i + 1}/${matchingGames.length})\n\n${formatGameSMS(game)}`;
+    for (let i = 0; i < toSend.length; i++) {
+      const game = toSend[i];
+      const msg = `LAHOA ${game["League"]} (${i + 1}/${toSend.length})\n\n${formatGameSMS(game)}`;
       await sendMessage(config, msg);
-      console.log(`  Sent game ${i + 1} of ${matchingGames.length}`);
+      console.log(`  Sent game ${i + 1} of ${toSend.length}`);
+      if (AUTO) {
+        state[gameKey(game)] = { open: hasOpenLinesman(game) };
+        saveState(state);
+      }
     }
     console.log("Done!");
+  }
+
+  if (AUTO) {
+    // Record every league game's current state (so a later opening is detected),
+    // and drop games that are no longer on the schedule.
+    const next = {};
+    for (const g of leagueGames) {
+      const k = gameKey(g);
+      next[k] = state[k] && toSend.includes(g) ? state[k] : (state[k] || { open: hasOpenLinesman(g) });
+      if (!toSend.includes(g)) next[k] = { open: hasOpenLinesman(g) };
+    }
+    saveState(next);
   }
 
   return 0;
@@ -375,7 +470,7 @@ async function main() {
     exitCode = 1;
   }
 
-  if (!ON_RAILWAY) {
+  if (!ON_RAILWAY && !AUTO) {
     await ask("\nPress Enter to close...");
   }
 

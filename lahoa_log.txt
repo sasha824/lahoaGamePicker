@@ -1,0 +1,837 @@
+Starting LAHOA notifier... (10/12/2026, 5:22:47 PM) (Railway mode: false, auto: true)
+LAHOA_USERNAME set: false
+TELEGRAM_TOKEN set: false
+LEAGUES: (not set)
+Loaded saved credentials from lahoa_config.json
+Logging in as 'ovolynskyi'...
+Fetching unassigned games...
+Filtering for leagues: SCAHA, TRYHL
+Total unassigned games parsed: 102
+Leagues found on site: LIAHL, AIAHL, TRYHL, KHSIAHL, SCAHA, , SVIAHL, GPIAHL, Westminster Ice Realm Youth, Westminister Ice Realm Adult, SVIYHL, LA KINGS HSHL
+In your leagues (SCAHA, TRYHL): 58
+With an open linesman spot: 50
+Linesman-only filter: ON
+Sample linesman values: Linesman="Piper Aquino [Y]" Linesman 2=""
+Column names: Game, Date, Time, Rink, League, Level, Away, Home, Type, Referee, Linesman, Linesman 2, Referee 2, Supervisor, Evaluator, , Status
+Found 50 game(s):
+
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : fPVdsHQ
+Date     : Sat Oct 17  2:50 PM
+Rink     : Great Park Ice 1
+League   : TRYHL
+Level    : Rinks Youth 10U
+Away     : 10U - Kucherov
+Home     : 10U - LD
+Type     : Regular
+Referee  : 2 Man
+Referee 2: (open)
+Linesman : Piper Aquino [Y]
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : ZVFUtlX
+Date     : Sat Oct 17  4:00 PM
+Rink     : Great Park Ice 1
+League   : TRYHL
+Level    : Rinks Youth 10U
+Away     : 10U - Crosby
+Home     : 10U - Bedard
+Type     : Regular
+Referee  : 2 Man
+Referee 2: (open)
+Linesman : Piper Aquino [Y]
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : REQUESTED
+Game #   : xoRuQJz
+Date     : Sat Oct 17  4:35 PM
+Rink     : Yorba Linda Ice
+League   : TRYHL
+Level    : Rinks Youth 10U
+Away     : SEED 3
+Home     : SEED 2
+Type     : Regular
+Referee  : 2 Man
+Referee 2: (open)
+Linesman : Sherman Lee
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : REQUESTED
+Game #   : 6AwBZeM
+Date     : Sat Oct 17  5:45 PM
+Rink     : Yorba Linda Ice
+League   : TRYHL
+Level    : Rinks Youth 10U
+Away     : SEED 4
+Home     : SEED 1
+Type     : Regular
+Referee  : 2 Man
+Referee 2: (open)
+Linesman : Sherman Lee
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : REQUESTED
+Game #   : UKIg5m2
+Date     : Sun Oct 18  10:30 AM
+Rink     : Anaheim Ice Oly
+League   : TRYHL
+Level    : Rinks Youth 12U
+Away     : SEED 4
+Home     : SEED 1
+Type     : Regular
+Referee  : 2 Man
+Referee 2: (open)
+Linesman : (open)
+Linesman2: Parker Tran [Y]
+────────────────────────────────────────────────────
+Status   : REQUESTED
+Game #   : VrY7Ngw
+Date     : Sun Oct 18  11:45 AM
+Rink     : Anaheim Ice Oly
+League   : TRYHL
+Level    : Rinks Youth 12U
+Away     : SEED 3
+Home     : SEED 2
+Type     : Regular
+Referee  : 2 Man
+Referee 2: (open)
+Linesman : (open)
+Linesman2: Parker Tran [Y]
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : FdZkl1v
+Date     : Sun Oct 18  2:45 PM
+Rink     : Anaheim Ice Oly
+League   : TRYHL
+Level    : Rinks Youth JV-D
+Away     : Yorba Linda - JVD
+Home     : Aztecs
+Type     : Regular
+Referee  : 2 Man
+Referee 2: (open)
+Linesman : (Trevor Goins)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : tm9KM4G
+Date     : Sun Oct 18  4:00 PM
+Rink     : Anaheim Ice Oly
+League   : TRYHL
+Level    : Rinks Youth JV-D
+Away     : Saddleback Wranglers -JVD
+Home     : Friars (JV)
+Type     : Regular
+Referee  : 2 Man
+Referee 2: (open)
+Linesman : (Trevor Goins)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149168001
+Date     : Sun Oct 18  12:30 PM
+Rink     : Mammoth
+League   : SCAHA
+Level    : SCAHA 14UBB
+Away     : Jr. Ducks (1)
+Home     : Stars
+Type     : Regular
+Referee  : Peter Chapman
+Referee 2: (open)
+Linesman : (open)
+Linesman2: Michael Braun
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149167744
+Date     : Sun Oct 18  2:30 PM
+Rink     : Mammoth
+League   : SCAHA
+Level    : SCAHA 10UB
+Away     : Jr. Gulls
+Home     : Stars (from BB)
+Type     : Regular
+Referee  : Peter Chapman
+Referee 2: (open)
+Linesman : (open)
+Linesman2: Michael Braun
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149168105
+Date     : Sun Oct 18  12:15 PM
+Rink     : Ontario Center Ice Arena
+League   : SCAHA
+Level    : SCAHA 10UB
+Away     : Avalanche (2)
+Home     : Empire HC (1)
+Type     : Regular
+Referee  : (open)
+Referee 2: (open)
+Linesman : Kosta Karvelas
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149167489
+Date     : Sun Oct 18  2:00 PM
+Rink     : Ontario Center Ice Arena
+League   : SCAHA
+Level    : SCAHA 08UB
+Away     : Bears (3)
+Home     : Empire HC (2)
+Type     : Regular
+Referee  : 2 Man
+Referee 2: (open)
+Linesman : Kosta Karvelas
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149167374
+Date     : Sun Oct 18  8:50 AM
+Rink     : Icetown Riverside
+League   : SCAHA
+Level    : SCAHA 08UA
+Away     : MAVERICKS
+Home     : Jr. Reign
+Type     : Regular
+Referee  : 2 Man
+Referee 2: (open)
+Linesman : (Isaac Gonzalez)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149166297
+Date     : Sun Oct 18  7:00 AM
+Rink     : Icetown Riverside A
+League   : SCAHA
+Level    : SCAHA 14UAA
+Away     : Empire HC (1)
+Home     : Jr. Reign (1)
+Type     : Regular
+Referee  : Gilbert Brenes
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (Jason Elliott)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149168079
+Date     : Sun Oct 18  8:40 AM
+Rink     : Icetown Riverside A
+League   : SCAHA
+Level    : SCAHA 14UA
+Away     : Maple Leafs
+Home     : Jr. Reign
+Type     : Regular
+Referee  : Gilbert Brenes
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (Jason Elliott)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149167823
+Date     : Sun Oct 18  10:20 AM
+Rink     : Icetown Riverside A
+League   : SCAHA
+Level    : SCAHA 10UA
+Away     : Jr. Reign
+Home     : Heat
+Type     : Regular
+Referee  : Gilbert Brenes
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (Jason Elliott)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149167930
+Date     : Sun Oct 18  7:10 AM
+Rink     : Icetown Riverside B
+League   : SCAHA
+Level    : SCAHA 12UBB
+Away     : OC Hockey (2) (FROM A)
+Home     : Jr. Reign (NEW BB)
+Type     : Regular
+Referee  : (open)
+Referee 2: (open)
+Linesman : (Isaac Gonzalez)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149167796
+Date     : Sun Oct 25  7:00 AM
+Rink     : Anaheim Ice NHL
+League   : SCAHA
+Level    : SCAHA 10UBB
+Away     : Ice Hawks (A to BB)
+Home     : Jr. Ducks (1)
+Type     : Regular
+Referee  : (open)
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149167920
+Date     : Sun Oct 25  8:45 AM
+Rink     : Anaheim Ice NHL
+League   : SCAHA
+Level    : SCAHA 12UBB
+Away     : Jr Condors (A to BB)
+Home     : Jr. Ducks (1)
+Type     : Regular
+Referee  : (open)
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149166853
+Date     : Sun Oct 25  12:45 PM
+Rink     : Anaheim Ice NHL
+League   : SCAHA
+Level    : SCAHA 16UA
+Away     : Wave
+Home     : Jr. Ducks (1)
+Type     : Regular
+Referee  : Ian Flick
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149167780
+Date     : Sun Oct 25  7:15 AM
+Rink     : Aliso Viejo Ice Palace
+League   : SCAHA
+Level    : SCAHA 10UBB
+Away     : Jr. Reign
+Home     : Avalanche (1)
+Type     : Regular
+Referee  : Samuel Fleishman [Y]
+Referee 2: (open)
+Linesman : Nathan Gonzalez [Y]
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149167981
+Date     : Sun Oct 25  7:00 AM
+Rink     : Yorba Linda Ice
+League   : SCAHA
+Level    : SCAHA 12UA
+Away     : Goldrush
+Home     : OC Hockey (1)
+Type     : Regular
+Referee  : Mitchel Harvey
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149168006
+Date     : Sun Oct 25  8:40 AM
+Rink     : Yorba Linda Ice
+League   : SCAHA
+Level    : SCAHA 14UBB
+Away     : Empire HC (1)
+Home     : OC Hockey (1)
+Type     : Regular
+Referee  : Mitchel Harvey
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149168052
+Date     : Sun Oct 25  10:20 AM
+Rink     : Yorba Linda Ice
+League   : SCAHA
+Level    : SCAHA 14UA
+Away     : Wave (1)
+Home     : OC Hockey (1)
+Type     : Regular
+Referee  : (open)
+Referee 2: (open)
+Linesman : (Jordan Watt)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : iNDcxQD
+Date     : Sat Oct 31  5:10 PM
+Rink     : Great Park Ice 1
+League   : TRYHL
+Level    : Rinks Youth 17U
+Away     : 14/17U - Kingfish
+Home     : 14/17U - Tritons
+Type     : Regular
+Referee  : 2 Man
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : vmnOpnw
+Date     : Sat Oct 31  6:20 PM
+Rink     : Great Park Ice 1
+League   : TRYHL
+Level    : Rinks Youth 12U
+Away     : 12U - Trojans
+Home     : 12U - Mustangs
+Type     : Regular
+Referee  : 2 Man
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149168100
+Date     : Sun Nov 1  10:45 AM
+Rink     : Lakewood Ice OLY (A)
+League   : SCAHA
+Level    : SCAHA 10UB
+Away     : Ice Hawks
+Home     : Lady Ducks
+Type     : Single
+Referee  : Michael Amerine
+Referee 2: (open)
+Linesman : (Noah Burcar)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 2BoRNUe
+Date     : Sun Nov 8  9:00 AM
+Rink     : Great Park Ice 3
+League   : TRYHL
+Level    : Rinks Youth 6U Cross
+Away     : 6U - Raikou
+Home     : 6U - Entei
+Type     : Regular
+Referee  : 2 Man
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : ptKNPcI
+Date     : Sun Nov 8  10:10 AM
+Rink     : Great Park Ice 3
+League   : TRYHL
+Level    : Rinks Youth 8U Cross
+Away     : 8U - Hulk
+Home     : 8U - Thor
+Type     : Regular
+Referee  : 2 Man
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149168250
+Date     : Sun Nov 8  10:30 AM
+Rink     : Lake Forest Ice Palace
+League   : SCAHA
+Level    : SCAHA 10UB
+Away     : Saints
+Home     : Avalanche (1)
+Type     : Regular
+Referee  : (Andrew Templeman)
+Referee 2: (open)
+Linesman : (open)
+Linesman2: Mattias Keopunna [Y]
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149166871
+Date     : Sun Nov 8  7:00 AM
+Rink     : Westminster Ice Realm
+League   : SCAHA
+Level    : SCAHA 16UA
+Away     : OC Hockey (1)
+Home     : Surf City Drillers
+Type     : Regular
+Referee  : Bryan Boggs
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149168323
+Date     : Sun Nov 8  10:20 AM
+Rink     : Westminster Ice Realm
+League   : SCAHA
+Level    : SCAHA 10UBB
+Away     : Avalanche (1)
+Home     : Surf City Drillers
+Type     : Regular
+Referee  : Bryan Boggs
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149166289
+Date     : Sun Nov 8  12 Noon
+Rink     : Westminster Ice Realm
+League   : SCAHA
+Level    : SCAHA 14UAA
+Away     : Avalanche (1)
+Home     : Surf (1)
+Type     : Regular
+Referee  : Bryan Boggs
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149168697
+Date     : Sun Nov 15  7:00 AM
+Rink     : East West Ice Palace
+League   : SCAHA
+Level    : SCAHA 12UA
+Away     : OC Hockey (1)
+Home     : Wave
+Type     : Regular
+Referee  : (Sergio Grotano)
+Referee 2: (open)
+Linesman : (Josh Reale)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149166231
+Date     : Sun Nov 15  8:40 AM
+Rink     : East West Ice Palace
+League   : SCAHA
+Level    : SCAHA 14UAA
+Away     : Jr. Reign (2)
+Home     : Wave
+Type     : Regular
+Referee  : (Sergio Grotano)
+Referee 2: (open)
+Linesman : (Josh Reale)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149168597
+Date     : Sun Nov 15  10:20 AM
+Rink     : East West Ice Palace
+League   : SCAHA
+Level    : SCAHA 12UBB
+Away     : Saints
+Home     : Wave
+Type     : Regular
+Referee  : (open)
+Referee 2: (open)
+Linesman : (Brea Benedict)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149168347
+Date     : Sun Nov 15  1:40 PM
+Rink     : East West Ice Palace
+League   : SCAHA
+Level    : SCAHA 10UBB
+Away     : BEARS
+Home     : Wave
+Type     : Regular
+Referee  : (open)
+Referee 2: (open)
+Linesman : (Brea Benedict)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149168398
+Date     : Sun Nov 15  12:20 PM
+Rink     : Great Park Ice 2
+League   : SCAHA
+Level    : SCAHA 10UA
+Away     : Heat
+Home     : Jr. Ducks (1)
+Type     : Regular
+Referee  : Frank Bayo
+Referee 2: (open)
+Linesman : Asher Ramchandani [Y]
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : ipBX1jc
+Date     : Sun Nov 15  9:00 AM
+Rink     : Great Park Ice 3
+League   : TRYHL
+Level    : Rinks Youth 8U Cross
+Away     : 8U - Superman
+Home     : 8U - Thor
+Type     : Regular
+Referee  : 2 Man
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : whZINbV
+Date     : Sun Nov 15  9:00 AM
+Rink     : Great Park Ice 3
+League   : TRYHL
+Level    : Rinks Youth 8U Cross
+Away     : 8U - Dr Strange
+Home     : 8U - Spiderman
+Type     : Regular
+Referee  : 2 Man
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : C4lnwF2
+Date     : Sun Nov 15  10:10 AM
+Rink     : Great Park Ice 3
+League   : TRYHL
+Level    : Rinks Youth 12U
+Away     : 12U - Bruins
+Home     : 12U - Cardinals
+Type     : Regular
+Referee  : 2 Man
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 8NzJcGN
+Date     : Sun Nov 15  11:20 AM
+Rink     : Great Park Ice 3
+League   : TRYHL
+Level    : Rinks Youth 12U
+Away     : 12U - Mustangs
+Home     : 12U - LD
+Type     : Regular
+Referee  : 2 Man
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149166923
+Date     : Sun Nov 15  7:00 AM
+Rink     : Westminster Ice Realm
+League   : SCAHA
+Level    : SCAHA 18UAA
+Away     : Wave
+Home     : Surf (1)
+Type     : Regular
+Referee  : Bryan Boggs
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149168310
+Date     : Sun Nov 15  8:40 AM
+Rink     : Westminster Ice Realm
+League   : SCAHA
+Level    : SCAHA 10UBB
+Away     : Jr. Kings (1)
+Home     : Surf City Drillers
+Type     : Regular
+Referee  : Bryan Boggs
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149166311
+Date     : Sun Nov 15  10:20 AM
+Rink     : Westminster Ice Realm
+League   : SCAHA
+Level    : SCAHA 16UAA
+Away     : Jr. Kings (1)
+Home     : Surf (1)
+Type     : Regular
+Referee  : Bryan Boggs
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149166298
+Date     : Sun Nov 15  12 Noon
+Rink     : Westminster Ice Realm
+League   : SCAHA
+Level    : SCAHA 14UAA
+Away     : Empire HC (1)
+Home     : Surf (1)
+Type     : Regular
+Referee  : Bryan Boggs
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149168511
+Date     : Sun Nov 22  8:40 AM
+Rink     : Yorba Linda Ice
+League   : SCAHA
+Level    : SCAHA 12UB
+Away     : Ice Hawks
+Home     : OC Hockey (1)
+Type     : Regular
+Referee  : (Jackson Welham)
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (John Salanga)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149168630
+Date     : Sun Nov 22  10:20 AM
+Rink     : Yorba Linda Ice
+League   : SCAHA
+Level    : SCAHA 12UA
+Away     : Jr. Ducks (3)a
+Home     : OC Hockey (1)
+Type     : Regular
+Referee  : (Jackson Welham)
+Referee 2: (open)
+Linesman : (open)
+Linesman2: (John Salanga)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149168587
+Date     : Sun Nov 22  1:40 PM
+Rink     : Yorba Linda Ice
+League   : SCAHA
+Level    : SCAHA 12UBB
+Away     : Jr Condors (A to BB)
+Home     : OC Hockey (1)
+Type     : Regular
+Referee  : (Eric Priebe)
+Referee 2: (open)
+Linesman : (Noah Black)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149166865
+Date     : Sun Nov 22  3:20 PM
+Rink     : Yorba Linda Ice
+League   : SCAHA
+Level    : SCAHA 16UA
+Away     : OC Hockey (1)
+Home     : OC Hockey (2)
+Type     : Regular
+Referee  : (Eric Priebe)
+Referee 2: (open)
+Linesman : (Noah Black)
+Linesman2: (open)
+────────────────────────────────────────────────────
+
+Sending Telegram message(s)...
+  Sent game 1 of 50
+  Sent game 2 of 50
+  Sent game 3 of 50
+  Sent game 4 of 50
+  Sent game 5 of 50
+  Sent game 6 of 50
+  Sent game 7 of 50
+  Sent game 8 of 50
+  Sent game 9 of 50
+  Sent game 10 of 50
+  Sent game 11 of 50
+  Sent game 12 of 50
+  Sent game 13 of 50
+  Sent game 14 of 50
+  Sent game 15 of 50
+  Sent game 16 of 50
+  Sent game 17 of 50
+  Sent game 18 of 50
+  Sent game 19 of 50
+  Sent game 20 of 50
+  Sent game 21 of 50
+  Sent game 22 of 50
+  Sent game 23 of 50
+  Sent game 24 of 50
+  Sent game 25 of 50
+  Sent game 26 of 50
+  Sent game 27 of 50
+  Sent game 28 of 50
+  Sent game 29 of 50
+  Sent game 30 of 50
+  Sent game 31 of 50
+  Sent game 32 of 50
+  Sent game 33 of 50
+  Sent game 34 of 50
+  Sent game 35 of 50
+  Sent game 36 of 50
+  Sent game 37 of 50
+  Sent game 38 of 50
+  Sent game 39 of 50
+  Sent game 40 of 50
+  Sent game 41 of 50
+  Sent game 42 of 50
+  Sent game 43 of 50
+  Sent game 44 of 50
+  Sent game 45 of 50
+  Sent game 46 of 50
+  Sent game 47 of 50
+  Sent game 48 of 50
+  Sent game 49 of 50
+  Sent game 50 of 50
+Done!
+Starting LAHOA notifier... (10/12/2026, 8:00:00 PM) (Railway mode: false, auto: true)
+LAHOA_USERNAME set: false
+TELEGRAM_TOKEN set: false
+LEAGUES: (not set)
+Loaded saved credentials from lahoa_config.json
+Logging in as 'ovolynskyi'...
+Fetching unassigned games...
+Filtering for leagues: SCAHA, TRYHL
+Total unassigned games parsed: 98
+Leagues found on site: LIAHL, TRYHL, AIAHL, KHSIAHL, SCAHA, SVIAHL, GPIAHL, Westminster Ice Realm Youth, Westminister Ice Realm Adult, SVIYHL, LA KINGS HSHL
+In your leagues (SCAHA, TRYHL): 55
+With an open linesman spot: 48
+Linesman-only filter: ON
+Sample linesman values: Linesman="(Trevor Goins)" Linesman 2=""
+Column names: Game, Date, Time, Rink, League, Level, Away, Home, Type, Referee, Linesman, Linesman 2, Referee 2, Supervisor, Evaluator, , Status
+Found 3 game(s):
+
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : N4iGRFP
+Date     : Sat Oct 17  4:30 PM
+Rink     : Anaheim Ice NHL
+League   : TRYHL
+Level    : Rinks Youth 17U
+Away     : SEED 4
+Home     : SEED 1
+Type     : Regular
+Referee  : 2 Man
+Referee 2: (open)
+Linesman : (Trevor Goins)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149168872
+Date     : Sun Nov 22  7:00 AM
+Rink     : Anaheim Ice NHL
+League   : SCAHA
+Level    : SCAHA 10UB
+Away     : LA Lions (1)
+Home     : Lady Ducks
+Type     : Regular
+Referee  : (open)
+Referee 2: (open)
+Linesman : (Russell Allan)
+Linesman2: (open)
+────────────────────────────────────────────────────
+Status   : NEW
+Game #   : 149168329
+Date     : Sun Nov 22  8:45 AM
+Rink     : Anaheim Ice NHL
+League   : SCAHA
+Level    : SCAHA 10UBB
+Away     : Jr. Reign
+Home     : Jr. Ducks (2)
+Type     : Regular
+Referee  : (open)
+Referee 2: (open)
+Linesman : (Russell Allan)
+Linesman2: (open)
+────────────────────────────────────────────────────
+
+Sending Telegram message(s)...
+  Sent game 1 of 3
+  Sent game 2 of 3
+  Sent game 3 of 3
+Done!

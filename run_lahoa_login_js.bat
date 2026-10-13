@@ -1,7 +1,3 @@
 @echo off
-node lahoa_login.js
-echo.
-echo ============================
-echo Script finished. Press any key to close this window.
-echo ============================
-pause >nul
+cd /d "%~dp0"
+node lahoa_login.js --auto >> lahoa_log.txt 2>&1
